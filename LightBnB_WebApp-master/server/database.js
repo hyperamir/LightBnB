@@ -116,28 +116,39 @@ const getAllProperties = function (options, limit = 10) {
   JOIN property_reviews ON properties.id = property_id
   `;
 
+  const filterArray = [];
+
   if (options.owner_id) {
     queryParams.push(options.owner_id);
-    queryString += `WHERE owner_id = $${queryParams.length} 
-    `
+    filterArray.push(`owner_id = $${queryParams.length}`)
+    //queryString += `WHERE owner_id = $${queryParams.length} 
+    // `
   }
 
   if (options.city) {
     queryParams.push(`%${options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length}
-    `;
+    filterArray.push(`city LIKE $${queryParams.length}`)
+    // queryString += `WHERE city LIKE $${queryParams.length}
+    // `;
   }
 
   if (options.minimum_price_per_night) {
     queryParams.push(options.minimum_price_per_night * 100);
-    queryString += `AND cost_per_night > $${queryParams.length}   
-      `
+    filterArray.push(`cost_per_night > $${queryParams.length}`)
+    // queryString += `AND cost_per_night > $${queryParams.length}   
+    //   `
   }
 
   if (options.maximum_price_per_night) {
     queryParams.push(options.maximum_price_per_night * 100);
-    queryString += `AND cost_per_night < $${queryParams.length}    
-      `
+    filterArray.push(`cost_per_night < $${queryParams.length}`)
+    // queryString += `AND cost_per_night < $${queryParams.length}    
+    //   `
+  }
+
+  if (filterArray.length !== 0) {
+    queryString += `WHERE ${filterArray.join(' AND ')}
+  `
   }
 
   queryString += `GROUP BY properties.id`;
@@ -153,7 +164,7 @@ const getAllProperties = function (options, limit = 10) {
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `;
-  
+
   return pool.query(queryString, queryParams).then((res) => res.rows);
 };
 exports.getAllProperties = getAllProperties;
@@ -172,11 +183,11 @@ const addProperty = function (property) {
   `;
 
   const queryParams = [property.owner_id, property.title, property.description, property.thumbnail_photo_url,
-  property.cover_photo_url, property.cost_per_night * 100, property.parking_spaces, property.number_of_bathrooms, 
+  property.cover_photo_url, property.cost_per_night * 100, property.parking_spaces, property.number_of_bathrooms,
   property.number_of_bedrooms, property.country, property.street, property.city, property.province, property.post_code];
 
   return pool.query(queryString, queryParams)
-  .then((result) => result.rows[0])
+    .then((result) => result.rows[0])
     .catch((err) => {
       console.log(err.message);
     });
